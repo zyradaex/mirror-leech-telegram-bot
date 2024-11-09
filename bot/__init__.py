@@ -420,6 +420,13 @@ MIXED_LEECH = MIXED_LEECH.lower() == "true" and IS_PREMIUM_USER
 THUMBNAIL_LAYOUT = environ.get("THUMBNAIL_LAYOUT", "")
 THUMBNAIL_LAYOUT = "" if len(THUMBNAIL_LAYOUT) == 0 else THUMBNAIL_LAYOUT
 
+MEGA_EMAIL = environ.get("MEGA_EMAIL", "")
+MEGA_PASSWORD = environ.get("MEGA_PASSWORD", "")
+if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
+    log_warning("MEGA Credentials not provided!")
+    MEGA_EMAIL = ""
+    MEGA_PASSWORD = ""
+
 config_dict = {
     "AS_DOCUMENT": AS_DOCUMENT,
     "AUTHORIZED_CHATS": AUTHORIZED_CHATS,
@@ -443,6 +450,8 @@ config_dict = {
     "LEECH_FILENAME_PREFIX": LEECH_FILENAME_PREFIX,
     "LEECH_SPLIT_SIZE": LEECH_SPLIT_SIZE,
     "MEDIA_GROUP": MEDIA_GROUP,
+    "MEGA_EMAIL": MEGA_EMAIL,
+    "MEGA_PASSWORD": MEGA_PASSWORD,
     "MIXED_LEECH": MIXED_LEECH,
     "NAME_SUBSTITUTE": NAME_SUBSTITUTE,
     "OWNER_ID": OWNER_ID,
@@ -497,8 +506,9 @@ if ospath.exists("list_drives.txt"):
                 index_urls.append("")
 
 if BASE_URL:
+    PORT = environ.get("PORT")
     Popen(
-        f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent",
+        f"gunicorn web.wserver:app --bind 0.0.0.0:{PORT} --worker-class gevent",
         shell=True,
     )
 

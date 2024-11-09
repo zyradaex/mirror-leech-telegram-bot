@@ -122,8 +122,25 @@ class TaskConfig:
         self.chat_thread_id = None
         self.suproc = None
         self.thumb = None
+        self.time = ""
+        self.mode = ""
         self.extension_filter = []
         self.is_super_chat = self.message.chat.type.name in ["SUPERGROUP", "CHANNEL"]
+
+    async def set_mode(self):
+        if self.is_leech:
+            mode = "Leech"
+        elif self.up_dest in {"rc", "rcl", "rcu"} or is_rclone_path(str(self.up_dest)):
+            mode = "Rclone"
+        else:
+            mode = "Mirror"
+    
+        if self.compress:
+            mode += " as Zip"
+        elif self.extract:
+            mode += " as Unzip"
+    
+        self.mode = mode
 
     def get_token_path(self, dest):
         if dest.startswith("mtp:"):
@@ -333,7 +350,7 @@ class TaskConfig:
                             self.up_dest, ChatAction.TYPING
                         )
                     except:
-                        raise ValueError("Start the bot and try again!")
+                        raise ValueError("<b>You need to start bot in DM first!!</b>")
             elif (
                 self.user_transmission or self.mixed_leech
             ) and not self.is_super_chat:
@@ -385,6 +402,7 @@ class TaskConfig:
                 self.thumb = (
                     await create_thumb(msg) if msg.photo or msg.document else ""
                 )
+        await self.set_mode()
 
     async def get_tag(self, text: list):
         if len(text) > 1 and text[1].startswith("Tag: "):
@@ -433,7 +451,7 @@ class TaskConfig:
             msg.append(f"{self.bulk[0]} -i {self.multi - 1} {self.options}")
             msgts = " ".join(msg)
             if self.multi > 2:
-                msgts += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
+                msgts += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand} {self.multi_tag}</code>"
             nextmsg = await send_message(self.message, msgts)
         else:
             msg = [s.strip() for s in input_list]
@@ -445,7 +463,7 @@ class TaskConfig:
             )
             msgts = " ".join(msg)
             if self.multi > 2:
-                msgts += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
+                msgts += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand} {self.multi_tag}</code>"
             nextmsg = await send_message(nextmsg, msgts)
         nextmsg = await self.client.get_messages(
             chat_id=self.message.chat.id, message_ids=nextmsg.id
@@ -486,7 +504,7 @@ class TaskConfig:
             if len(self.bulk) > 2:
                 self.multi_tag = token_urlsafe(3)
                 multi_tags.add(self.multi_tag)
-                msg += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
+                msg += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand} {self.multi_tag}</code>"
             nextmsg = await send_message(self.message, msg)
             nextmsg = await self.client.get_messages(
                 chat_id=self.message.chat.id, message_ids=nextmsg.id

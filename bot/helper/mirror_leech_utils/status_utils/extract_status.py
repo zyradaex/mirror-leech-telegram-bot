@@ -16,6 +16,7 @@ class ExtractStatus:
         self._gid = gid
         self._start_time = time()
         self._proccessed_bytes = 0
+        self.engine = "P7zip"
 
     def gid(self):
         return self._gid

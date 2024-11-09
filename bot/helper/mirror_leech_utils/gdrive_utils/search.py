@@ -94,7 +94,7 @@ class GoogleDriveSearch(GoogleDriveHelper):
             return {"files": []}
 
     def drive_list(self, file_name, target_id="", user_id=""):
-        msg = ""
+        msg = f"""<figure><img src='https://i.pinimg.com/736x/dd/0a/03/dd0a03d83333a7a8228555347cd9c3f8.jpg'></figure>"""
         file_name = self.escapes(str(file_name))
         contents_no = 0
         telegraph_content = []
@@ -169,7 +169,7 @@ class GoogleDriveSearch(GoogleDriveHelper):
             if self._no_multi:
                 break
 
-        if msg != "":
+        if msg != f"""<figure><img src='https://i.pinimg.com/736x/dd/0a/03/dd0a03d83333a7a8228555347cd9c3f8.jpg'></figure>""":
             telegraph_content.append(msg)
 
         return telegraph_content, contents_no

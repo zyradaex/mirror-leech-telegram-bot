@@ -32,6 +32,7 @@ from .helper.ext_utils.bot_utils import (
     sync_to_async,
     create_help_buttons,
     new_task,
+    set_commands,
 )
 from .helper.ext_utils.db_handler import database
 from .helper.ext_utils.files_utils import clean_all, exit_clean_up
@@ -42,7 +43,7 @@ from .helper.mirror_leech_utils.rclone_utils.serve import rclone_serve_booter
 from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.button_build import ButtonMaker
 from .helper.telegram_helper.filters import CustomFilters
-from .helper.telegram_helper.message_utils import send_message, edit_message, send_file
+from .helper.telegram_helper.message_utils import send_message, edit_message, send_file, auto_delete_message
 from .modules import (
     authorize,
     cancel_task,
@@ -93,27 +94,31 @@ async def stats(_, message):
         f"<b>Memory Free:</b> {get_readable_file_size(memory.available)}\n"
         f"<b>Memory Used:</b> {get_readable_file_size(memory.used)}\n"
     )
-    await send_message(message, stats)
+    smsg = await send_message(message, stats)
+    await auto_delete_message(smsg, message)
 
 
 @new_task
 async def start(client, message):
     buttons = ButtonMaker()
     buttons.url_button(
-        "Repo", "https://www.github.com/anasty17/mirror-leech-telegram-bot"
+        "Repo", "https://github.com/zyradaex/mirror-leech-telegram-bot"
     )
-    buttons.url_button("Code Owner", "https://t.me/anas_tayyar")
+    buttons.url_button("Bot Owner", "https://t.me/u_xzyp")
     reply_markup = buttons.build_menu(2)
     if await CustomFilters.authorized(client, message):
         start_string = f"""
-This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram.
-Type /{BotCommands.HelpCommand} to get a list of available commands
+<b>Hi {message.from_user.mention(style='HTML')}!
+
+<blockquote>This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram.</blockquote>
+
+Try /{BotCommands.HelpCommand} to get a list of available commands</b>
 """
         await send_message(message, start_string, reply_markup)
     else:
         await send_message(
             message,
-            "You Are not authorized user! Deploy your own mirror-leech bot",
+            "<b>Done, redo your task on groups!!\n<blockquote>Your files will be sent here check /uset if you want to changes your leech destination</b></blockquote>\n<b>@zyradaexmirror</b>",
             reply_markup,
         )
 
@@ -144,7 +149,7 @@ async def restart(_, message):
         "pkill",
         "-9",
         "-f",
-        "gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone|java|sabnzbdplus",
+        "gunicorn|buffet|openstack|render|zcl|java|sabnzbdplus",
     )
     proc2 = await create_subprocess_exec("python3", "update.py")
     await gather(proc1.wait(), proc2.wait())
@@ -184,7 +189,7 @@ NOTE: Try each command without any argument to see more detalis.
 /{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Users settings.
 /{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[1]} [query]: Bot settings.
 /{BotCommands.SelectCommand}: Select files from torrents or nzb by gid or reply.
-/{BotCommands.CancelTaskCommand[0]} or /{BotCommands.CancelTaskCommand[1]} [gid]: Cancel task by gid or reply.
+/{BotCommands.CancelTaskCommand[0]} [gid]: Cancel task by gid or reply.
 /{BotCommands.ForceStartCommand[0]} or /{BotCommands.ForceStartCommand[1]} [gid]: Force start task by gid or reply.
 /{BotCommands.CancelAllCommand} [query]: Cancel all [status] tasks.
 /{BotCommands.ListCommand} [query]: Search in Google Drive(s).
@@ -209,7 +214,8 @@ NOTE: Try each command without any argument to see more detalis.
 
 @new_task
 async def bot_help(_, message):
-    await send_message(message, help_string)
+    hmsg = await send_message(message, help_string)
+    await auto_delete_message(hmsg, message)
 
 
 async def restart_notification():
@@ -239,11 +245,11 @@ async def restart_notification():
     if config_dict["INCOMPLETE_TASK_NOTIFIER"] and config_dict["DATABASE_URL"]:
         if notifier_dict := await database.get_incomplete_tasks():
             for cid, data in notifier_dict.items():
-                msg = "Restarted Successfully!" if cid == chat_id else "Bot Restarted!"
+                msg = "Restarted Successfully!" if cid == chat_id else "<b>Bot Restarted!\n\nIncomplete Task User</b>"
                 for tag, links in data.items():
                     msg += f"\n\n{tag}: "
                     for index, link in enumerate(links, start=1):
-                        msg += f" <a href='{link}'>{index}</a> |"
+                        msg += f"\n{index}. {link}\n"
                         if len(msg.encode()) > 4000:
                             await send_incomplete_task_message(cid, msg)
                             msg = ""
@@ -271,6 +277,7 @@ async def main():
         telegraph.create_account(),
         rclone_serve_booter(),
         sync_to_async(start_aria2_listener, wait=False),
+        set_commands(bot),
     )
     create_help_buttons()
 

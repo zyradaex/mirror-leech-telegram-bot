@@ -11,6 +11,7 @@ from ..helper.ext_utils.bot_utils import (
     new_task,
     sync_to_async,
     arg_parser,
+    delete_links,
     COMMAND_USAGE,
 )
 from ..helper.ext_utils.links_utils import is_url
@@ -348,6 +349,8 @@ class YtDlp(TaskListener):
         bulk_end = 0
         reply_to = None
         opt = args["-opt"]
+
+        await delete_links(self.message)
 
         if not isinstance(is_bulk, bool):
             dargs = is_bulk.split(":")

@@ -7,7 +7,7 @@ class _BotCommands:
         self.MirrorCommand = [f"mirror{CMD_SUFFIX}", f"m{CMD_SUFFIX}"]
         self.QbMirrorCommand = [f"qbmirror{CMD_SUFFIX}", f"qm{CMD_SUFFIX}"]
         self.JdMirrorCommand = [f"jdmirror{CMD_SUFFIX}", f"jm{CMD_SUFFIX}"]
-        self.YtdlCommand = [f"ytdl{CMD_SUFFIX}", f"y{CMD_SUFFIX}"]
+        self.YtdlCommand = [f"ytdl{CMD_SUFFIX}", f"ym{CMD_SUFFIX}"]
         self.NzbMirrorCommand = [f"nzbmirror{CMD_SUFFIX}", f"nm{CMD_SUFFIX}"]
         self.LeechCommand = [f"leech{CMD_SUFFIX}", f"l{CMD_SUFFIX}"]
         self.QbLeechCommand = [f"qbleech{CMD_SUFFIX}", f"ql{CMD_SUFFIX}"]
@@ -17,7 +17,7 @@ class _BotCommands:
         self.CloneCommand = f"clone{CMD_SUFFIX}"
         self.CountCommand = f"count{CMD_SUFFIX}"
         self.DeleteCommand = f"del{CMD_SUFFIX}"
-        self.CancelTaskCommand = [f"cancel{CMD_SUFFIX}", f"c{CMD_SUFFIX}"]
+        self.CancelTaskCommand = f"cancel{CMD_SUFFIX}"
         self.CancelAllCommand = f"cancelall{CMD_SUFFIX}"
         self.ForceStartCommand = [f"forcestart{CMD_SUFFIX}", f"fs{CMD_SUFFIX}"]
         self.ListCommand = f"list{CMD_SUFFIX}"
@@ -37,8 +37,8 @@ class _BotCommands:
         self.AExecCommand = f"aexec{CMD_SUFFIX}"
         self.ExecCommand = f"exec{CMD_SUFFIX}"
         self.ClearLocalsCommand = f"clearlocals{CMD_SUFFIX}"
-        self.BotSetCommand = [f"bsetting{CMD_SUFFIX}", f"bs{CMD_SUFFIX}"]
-        self.UserSetCommand = [f"usetting{CMD_SUFFIX}", f"us{CMD_SUFFIX}"]
+        self.BotSetCommand = [f"bsetting{CMD_SUFFIX}", f"bs{CMD_SUFFIX}", f"bset{CMD_SUFFIX}"]
+        self.UserSetCommand = [f"usetting{CMD_SUFFIX}", f"us{CMD_SUFFIX}", f"uset{CMD_SUFFIX}"]
         self.SelectCommand = f"sel{CMD_SUFFIX}"
         self.RssCommand = f"rss{CMD_SUFFIX}"
 

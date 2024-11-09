@@ -2,6 +2,7 @@ from aiofiles.os import path as aiopath, listdir, makedirs, remove
 from aioshutil import move
 from asyncio import sleep, gather
 from html import escape
+from time import time
 from requests import utils as rutils
 
 from bot import (
@@ -30,7 +31,7 @@ from ..ext_utils.files_utils import (
     join_files,
 )
 from ..ext_utils.links_utils import is_gdrive_id
-from ..ext_utils.status_utils import get_readable_file_size
+from ..ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ..ext_utils.task_manager import start_from_queued, check_running_tasks
 from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
@@ -43,6 +44,7 @@ from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.message_utils import (
     send_message,
     delete_status,
+    auto_delete_message,
     update_status_message,
 )
 
@@ -50,6 +52,7 @@ from ..telegram_helper.message_utils import (
 class TaskListener(TaskConfig):
     def __init__(self):
         super().__init__()
+        self.time = time()
 
     async def clean(self):
         try:
@@ -271,16 +274,22 @@ class TaskListener(TaskConfig):
             and DATABASE_URL
         ):
             await database.rm_complete_task(self.message.link)
-        msg = f"<b>Name: </b><code>{escape(self.name)}</code>\n\n<b>Size: </b>{get_readable_file_size(self.size)}"
+        msg = (
+            f"\n<b>Hey {self.tag}!\nYour job is done.</b>"
+            f"\n\n<blockquote><code>Size  </code>: {get_readable_file_size(self.size)}"
+            f"\n<code>Past  </code>: {get_readable_time(time() - self.time)}"
+            f"\n<code>Mode  </code>: {self.mode}"
+        )
         LOGGER.info(f"Task Done: {self.name}")
         if self.is_leech:
-            msg += f"\n<b>Total Files: </b>{folders}"
+            msg += f"\n<code>Files </code>: {folders}\n"
             if mime_type != 0:
-                msg += f"\n<b>Corrupted Files: </b>{mime_type}"
-            msg += f"\n<b>cc: </b>{self.tag}\n\n"
+                msg += f"<code>Error </code>: {mime_type}\n"
             if not files:
+                msg += f"</blockquote>\n<b><i>Files has been sent in your DM.</b></i>"
                 await send_message(self.message, msg)
             else:
+                msg += f"</blockquote>\n"
                 fmsg = ""
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
@@ -291,10 +300,10 @@ class TaskListener(TaskConfig):
                 if fmsg != "":
                     await send_message(self.message, msg + fmsg)
         else:
-            msg += f"\n\n<b>Type: </b>{mime_type}"
+            msg += f"\n<code>Type  </code>: {mime_type}"
             if mime_type == "Folder":
-                msg += f"\n<b>SubFolders: </b>{folders}"
-                msg += f"\n<b>Files: </b>{files}"
+                msg += f"\n<code>Files </code>: {files}"
+                msg += f"\n<code>Folder</code>: {folders}"
             if (
                 link
                 or rclonePath
@@ -303,9 +312,9 @@ class TaskListener(TaskConfig):
             ):
                 buttons = ButtonMaker()
                 if link:
-                    buttons.url_button("☁️ Cloud Link", link)
+                    buttons.url_button("☁️ Cloud Link", link, position="header")
                 else:
-                    msg += f"\n\nPath: <code>{rclonePath}</code>"
+                    msg += f"\n\n<code>Path  </code>: {rclonePath}"
                 if (
                     rclonePath
                     and (RCLONE_SERVE_URL := config_dict["RCLONE_SERVE_URL"])
@@ -331,9 +340,9 @@ class TaskListener(TaskConfig):
                             buttons.url_button("🌐 View Link", share_urls)
                 button = buttons.build_menu(2)
             else:
-                msg += f"\n\nPath: <code>{rclonePath}</code>"
+                msg += f"\n\n<code>Path  </code>: {rclonePath}"
                 button = None
-            msg += f"\n\n<b>cc: </b>{self.tag}"
+            msg += f"</blockquote>\n\n<b><i>Files has been sent in your Drive.</b></i>"
             await send_message(self.message, msg, button)
         if self.seed:
             if self.new_dir:
@@ -365,8 +374,19 @@ class TaskListener(TaskConfig):
                 del task_dict[self.mid]
             count = len(task_dict)
         await self.remove_from_same_dir()
-        msg = f"{self.tag} Download: {escape(str(error))}"
-        await send_message(self.message, msg, button)
+        msg = f"Sorry {self.tag}!\nYour download has been stopped."
+        msg += f"\n\n<blockquote><code>Reason </code>: {escape(str(error))}"
+        msg += f"\n<code>Past   </code>: {get_readable_time(time() - self.time)}"
+        msg += f"\n<code>Mode   </code>: {self.mode}</blockquote>"
+        tlmsg = await send_message(
+            self.message, # type: ignore
+            msg,
+            button
+        )
+        await auto_delete_message(
+            self.message, # type: ignore
+            tlmsg
+        )
         if count == 0:
             await self.clean()
         else:
@@ -404,7 +424,18 @@ class TaskListener(TaskConfig):
             if self.mid in task_dict:
                 del task_dict[self.mid]
             count = len(task_dict)
-        await send_message(self.message, f"{self.tag} {escape(str(error))}")
+        msg = f"Sorry {self.tag}!\nYour upload has been stopped."
+        msg += f"\n\n<blockquote><code>Reason </code>: {escape(str(error))}"
+        msg += f"\n<code>Past   </code>: {get_readable_time(time() - self.time)}"
+        msg += f"\n<code>Mode   </code>: {self.mode}</blockquote>"
+        tlmsg = await send_message(
+            self.message, # type: ignore
+            msg
+        )
+        await auto_delete_message(
+            self.message, # type: ignore
+            tlmsg
+        )
         if count == 0:
             await self.clean()
         else:

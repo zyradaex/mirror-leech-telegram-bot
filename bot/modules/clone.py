@@ -10,6 +10,7 @@ from ..helper.ext_utils.bot_utils import (
     sync_to_async,
     cmd_exec,
     arg_parser,
+    delete_links,
     COMMAND_USAGE,
 )
 from ..helper.ext_utils.exceptions import DirectDownloadLinkException
@@ -66,6 +67,8 @@ class Clone(TaskListener):
     async def new_event(self):
         text = self.message.text.split("\n")
         input_list = text[0].split(" ")
+
+        await delete_links(self.message)
 
         args = {
             "link": "",

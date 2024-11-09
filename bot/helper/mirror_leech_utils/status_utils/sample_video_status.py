@@ -1,5 +1,5 @@
 from bot import LOGGER, subprocess_lock
-from ...ext_utils.status_utils import get_readable_file_size, MirrorStatus
+from ...ext_utils.status_utils import get_readable_file_size, MirrorStatus, get_readable_time
 
 
 class SampleVideoStatus:
@@ -7,6 +7,7 @@ class SampleVideoStatus:
         self.listener = listener
         self._gid = gid
         self._size = self.listener.size
+        self.engine = "FFmpeg v7.1"
 
     def gid(self):
         return self._gid

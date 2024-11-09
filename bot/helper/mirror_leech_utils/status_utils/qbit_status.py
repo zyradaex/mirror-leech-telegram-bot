@@ -24,6 +24,7 @@ class QbittorrentStatus:
         self.seeding = seeding
         self.listener = listener
         self._info = None
+        self.engine = "Qbit v4.6.7"
 
     def update(self):
         self._info = get_download(f"{self.listener.mid}", self._info)

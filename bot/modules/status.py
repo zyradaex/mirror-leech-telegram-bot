@@ -1,4 +1,4 @@
-from psutil import cpu_percent, virtual_memory, disk_usage
+from psutil import cpu_percent, virtual_memory, disk_usage, net_io_counters
 from pyrogram.filters import command, regex
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from time import time
@@ -12,7 +12,7 @@ from bot import (
     intervals,
     bot,
 )
-from ..helper.ext_utils.bot_utils import sync_to_async, new_task
+from ..helper.ext_utils.bot_utils import sync_to_async, new_task, handle_spam_protection
 from ..helper.ext_utils.status_utils import (
     MirrorStatus,
     get_readable_file_size,
@@ -64,7 +64,11 @@ async def mirror_status(_, message):
 async def status_pages(_, query):
     data = query.data.split()
     key = int(data[1])
+    user_id = query.from_user.id
+
     if data[2] == "ref":
+        if not await handle_spam_protection(user_id, query):
+            return
         await query.answer()
         await update_status_message(key, force=True)
     elif data[2] in ["nex", "pre"]:
@@ -103,6 +107,7 @@ async def status_pages(_, query):
         dl_speed = 0
         up_speed = 0
         seed_speed = 0
+        traf = get_readable_file_size(net_io_counters().bytes_sent + net_io_counters().bytes_recv)
         async with task_dict_lock:
             for download in task_dict.values():
                 match await sync_to_async(download.status):
@@ -139,18 +144,30 @@ async def status_pages(_, query):
                         tasks["Download"] += 1
                         dl_speed += speed_string_to_bytes(download.speed())
 
-        msg = f"""<b>DL:</b> {tasks['Download']} | <b>UP:</b> {tasks['Upload']} | <b>SD:</b> {tasks['Seed']} | <b>AR:</b> {tasks['Archive']}
-<b>EX:</b> {tasks['Extract']} | <b>SP:</b> {tasks['Split']} | <b>QD:</b> {tasks['QueueDl']} | <b>QU:</b> {tasks['QueueUp']}
-<b>CL:</b> {tasks['Clone']} | <b>CK:</b> {tasks['CheckUp']} | <b>PA:</b> {tasks['Pause']} | <b>SV:</b> {tasks['SamVid']}
-<b>CM:</b> {tasks['ConvertMedia']}
+        msg = (
+            f"DL: {tasks['Download']} | "
+            f"UP: {tasks['Upload']} | "
+            f"SD: {tasks['Seed']} | "
+            f"EX: {tasks['Extract']} | "
+            f"SP: {tasks['Split']} | "
+            f"AR: {tasks['Archive']}\n"
+            f"QU: {tasks['QueueUp']} | "
+            f"QD: {tasks['QueueDl']} | "
+            f"PA: {tasks['Pause']} | "
+            f"SV: {tasks['SamVid']} | "
+            f"CM: {tasks['ConvertMedia']} | "
+            f"CL: {tasks['Clone']}\n\n"
 
-<b>ODLS:</b> {get_readable_file_size(dl_speed)}/s
-<b>OULS:</b> {get_readable_file_size(up_speed)}/s
-<b>OSDS:</b> {get_readable_file_size(seed_speed)}/s
-"""
-        button = ButtonMaker()
-        button.data_button("Back", f"status {data[1]} ref")
-        await edit_message(message, msg, button.build_menu())
+            f"DL: {get_readable_file_size(dl_speed)}/s | " # type: ignore
+            f"UL: {get_readable_file_size(up_speed)}/s | " # type: ignore
+            f"SD: {get_readable_file_size(seed_speed)}/s\n\n" # type: ignore
+            f"Total Bandwidth: {traf}\n"
+            )
+
+        await query.answer(
+            msg,
+            show_alert=True
+        )
 
 
 bot.add_handler(

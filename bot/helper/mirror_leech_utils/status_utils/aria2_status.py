@@ -22,6 +22,7 @@ class Aria2Status:
         self.queued = queued
         self.start_time = 0
         self.seeding = seeding
+        self.engine = "Aria2C v1.37.0"
 
     def update(self):
         if self._download is None:

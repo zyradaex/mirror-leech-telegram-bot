@@ -7,6 +7,7 @@ class SplitStatus:
         self.listener = listener
         self._gid = gid
         self._size = self.listener.size
+        self.engine = "FFmpeg v7.1"
 
     def gid(self):
         return self._gid

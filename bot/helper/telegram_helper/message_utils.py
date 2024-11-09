@@ -2,6 +2,7 @@ from asyncio import sleep
 from pyrogram.errors import FloodWait, FloodPremiumWait
 from re import match as re_match
 from time import time
+from pyrogram.types import InputMediaPhoto
 
 from bot import config_dict, LOGGER, status_dict, task_dict_lock, intervals, bot, user
 from ..ext_utils.bot_utils import SetInterval
@@ -9,8 +10,28 @@ from ..ext_utils.exceptions import TgLinkException
 from ..ext_utils.status_utils import get_readable_message
 
 
-async def send_message(message, text, buttons=None, block=True):
+async def send_message(message, text, buttons=None, photo=None, block=True):
     try:
+        if photo:
+            try:
+                if photo == "Random":
+                    photo = choice(IMAGES)
+                return await message.reply_photo(
+                    photo=photo,
+                    reply_to_message_id=message.id,
+                    caption=text,
+                    reply_markup=buttons,
+                    disable_notification=True,
+                )
+            except IndexError:
+                pass
+            except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
+                des_dir = await download_image_url(photo)
+                await send_message(message, text, buttons, des_dir)
+                await aioremove(des_dir)
+                return None
+            except Exception:
+                LOGGER.error(format_exc())
         return await message.reply(
             text=text,
             quote=True,
@@ -20,28 +41,33 @@ async def send_message(message, text, buttons=None, block=True):
         )
     except FloodWait as f:
         LOGGER.warning(str(f))
-        if block:
-            await sleep(f.value * 1.2)
-            return await send_message(message, text, buttons)
-        return str(f)
+        await sleep(f.value * 1.2)
+        return await send_message(message, text, buttons, photo)
+    except ReplyMarkupInvalid:
+        return await send_message(message, text, None, photo)
     except Exception as e:
-        LOGGER.error(str(e))
+        LOGGER.error(format_exc())
         return str(e)
 
-
-async def edit_message(message, text, buttons=None, block=True):
+async def edit_message(message, text, buttons=None, photo=None, block=True):
     try:
-        return await message.edit(
+        if message.media:
+            if photo:
+                return await message.edit_media(
+                    InputMediaPhoto(photo, text), reply_markup=buttons
+                )
+            return await message.edit_caption(caption=text, reply_markup=buttons)
+        await message.edit(
             text=text,
             disable_web_page_preview=True,
             reply_markup=buttons,
         )
     except FloodWait as f:
         LOGGER.warning(str(f))
-        if block:
-            await sleep(f.value * 1.2)
-            return await edit_message(message, text, buttons)
-        return str(f)
+        await sleep(f.value * 1.2)
+        return await edit_message(message, text, buttons, photo)
+    except (MessageNotModified, MessageEmpty):
+        pass
     except Exception as e:
         LOGGER.error(str(e))
         return str(e)
@@ -86,6 +112,9 @@ async def delete_message(message):
     except Exception as e:
         LOGGER.error(str(e))
 
+async def five_minute_del(message):
+    await sleep(300) # Delay time
+    await delete_message(message)
 
 async def auto_delete_message(cmd_message=None, bot_message=None):
     await sleep(60)
@@ -104,6 +133,18 @@ async def delete_status():
             except Exception as e:
                 LOGGER.error(str(e))
 
+async def chat_info(channel_id):
+    if channel_id.startswith("-100"):
+        channel_id = int(channel_id)
+    elif channel_id.startswith("@"):
+        channel_id = channel_id.replace("@", "")
+    else:
+        return None
+    try:
+        return await bot.get_chat(channel_id)
+    except PeerIdInvalid as e:
+        LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
+        return None
 
 async def get_tg_link_message(link):
     message = None

@@ -9,6 +9,7 @@ from ..helper.ext_utils.bot_utils import (
     get_content_type,
     sync_to_async,
     arg_parser,
+    delete_links,
     COMMAND_USAGE,
 )
 from ..helper.ext_utils.exceptions import DirectDownloadLinkException
@@ -205,6 +206,8 @@ class Mirror(TaskListener):
         await self.get_tag(text)
 
         path = f"{DOWNLOAD_DIR}{self.mid}{self.folder_name}"
+
+        await delete_links(self.message)
 
         if not self.link and (reply_to := self.message.reply_to_message):
             if reply_to.text:

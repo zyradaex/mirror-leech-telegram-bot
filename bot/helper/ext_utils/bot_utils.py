@@ -1,16 +1,20 @@
 from httpx import AsyncClient
+import datetime
 from asyncio.subprocess import PIPE
 from functools import partial, wraps
 from concurrent.futures import ThreadPoolExecutor
+from pyrogram.types import BotCommand
 from asyncio import (
     create_subprocess_exec,
     create_subprocess_shell,
     run_coroutine_threadsafe,
     sleep,
+    Lock,
 )
 
-from bot import user_data, config_dict, bot_loop
+from bot import user_data, config_dict, bot_loop, OWNER_ID
 from ..telegram_helper.button_build import ButtonMaker
+from ..telegram_helper.bot_commands import BotCommands
 from .telegraph_helper import telegraph
 from .help_messages import (
     YT_HELP_DICT,
@@ -19,6 +23,8 @@ from .help_messages import (
 )
 
 COMMAND_USAGE = {}
+user_cache = {}
+lock = Lock()
 
 THREAD_POOL = ThreadPoolExecutor(max_workers=3000)
 
@@ -37,6 +43,51 @@ class SetInterval:
     def cancel(self):
         self.task.cancel()
 
+async def delete_links(message):
+    if message.from_user.id == OWNER_ID and message.chat.type == message.chat.type.PRIVATE:
+        return
+
+    if config_dict['DELETE_LINKS']:
+        try:
+            if reply_to := message.reply_to_message:
+                await sleep(1)
+                await reply_to.delete()
+                await message.delete()
+            else:
+                await sleep(1)
+                await message.delete()
+        except Exception as e:
+            LOGGER.error(str(e))
+
+async def handle_spam_protection(user_id, query, cooldown_seconds=7):
+    async with lock:
+        if user_id in user_cache and datetime.datetime.now() < user_cache[user_id] + datetime.timedelta(seconds=cooldown_seconds):
+            remaining_time = (user_cache[user_id] + datetime.timedelta(seconds=cooldown_seconds)) - datetime.datetime.now()
+            seconds_left = int(remaining_time.total_seconds())
+            await query.answer(f"Don't spam! try again after {seconds_left}s", show_alert=True)
+            return False
+        user_cache[user_id] = datetime.datetime.now()
+    return True
+
+async def set_commands(bot):
+    if config_dict['SET_COMMANDS']:
+        await bot.set_bot_commands(commands=[
+            BotCommand(BotCommands.MirrorCommand[0], "Start mirroring (or " + BotCommands.MirrorCommand[1] + ")"),
+            BotCommand(BotCommands.LeechCommand[0], "Start leeching (or " + BotCommands.LeechCommand[1] + ")"),
+            BotCommand(BotCommands.QbMirrorCommand[0], "Start torrent mirroring (or " + BotCommands.QbMirrorCommand[1] + ")"),
+            BotCommand(BotCommands.QbLeechCommand[0], "Start torrent leeching (or " + BotCommands.QbLeechCommand[1] + ")"),
+            BotCommand(BotCommands.YtdlCommand[0], "Mirror with ytdlp (or " + BotCommands.YtdlCommand[1] + ")"),
+            BotCommand(BotCommands.YtdlLeechCommand[0], "Leech with ytdlp (or " + BotCommands.YtdlLeechCommand[1] + ")"),
+            BotCommand(BotCommands.ListCommand, "Search files in mirror Drive"),
+            BotCommand(BotCommands.CloneCommand, "Cloning files to mirror Drive"),
+            BotCommand(BotCommands.SearchCommand, "Search something from torrents site"),
+            BotCommand(BotCommands.CancelTaskCommand, "Cancel one task"),
+            BotCommand(BotCommands.CancelAllCommand, "Cancel all tasks"),
+            BotCommand(BotCommands.PingCommand, "Ping the bot"),
+            BotCommand(BotCommands.HelpCommand, "Get help"),
+            BotCommand(BotCommands.UserSetCommand[0], "Open user setting menu (or " + BotCommands.UserSetCommand[1] + ")"),
+            BotCommand(BotCommands.RestartCommand, "Restart the bot (only owner)"),
+        ])
 
 def _build_command_usage(help_dict, command_key):
     buttons = ButtonMaker()
@@ -74,7 +125,7 @@ async def get_telegraph_list(telegraph_content):
     path = [
         (
             await telegraph.create_page(
-                title="Mirror-Leech-Bot Drive Search", content=content
+                title="Drive Search", content=content
             )
         )["path"]
         for content in telegraph_content

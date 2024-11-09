@@ -3,7 +3,7 @@ from asyncio import sleep
 from functools import partial
 from html import escape
 from io import BytesIO
-from os import getcwd
+from os import getcwd, path as ospath
 from pyrogram.filters import command, regex, create
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from time import time
@@ -31,6 +31,7 @@ from ..helper.telegram_helper.message_utils import (
     edit_message,
     send_file,
     delete_message,
+    five_minute_del,
 )
 
 handler_dict = {}
@@ -181,7 +182,7 @@ async def get_user_settings(from_user):
     if user_dict:
         buttons.data_button("Reset All", f"userset {user_id} reset")
 
-    buttons.data_button("Close", f"userset {user_id} close")
+    buttons.data_button("Close", f"userset {user_id} close", position="footer")
 
     text = f"""<u>Settings for {name}</u>
 Leech Type is <b>{ltype}</b>
@@ -206,12 +207,16 @@ Name substitution is <b>{ns_msg}</b>
 Excluded Extensions is <code>{ex_ex}</code>
 YT-DLP Options is <b><code>{escape(ytopt)}</code></b>"""
 
-    return text, buttons.build_menu(1)
+    return text, buttons.build_menu(2)
 
 
 async def update_user_settings(query):
     msg, button = await get_user_settings(query.from_user)
-    await edit_message(query.message, msg, button)
+    user_id = query.from_user.id
+    thumbnail = f"Thumbnails/{user_id}.jpg"
+    if not ospath.exists(thumbnail):
+        thumbnail = None
+    await edit_message(query.message, msg, button, thumbnail)
 
 
 @new_task
@@ -219,7 +224,14 @@ async def user_settings(_, message):
     from_user = message.from_user
     handler_dict[from_user.id] = False
     msg, button = await get_user_settings(from_user)
-    await send_message(message, msg, button)
+    user_id = message.from_user.id
+    thumbnail = f"Thumbnails/{user_id}.jpg"
+    if not ospath.exists(thumbnail):
+        thumbnail = None
+    msg, button = await get_user_settings(from_user)
+    umsg = await send_message(message, msg, button, thumbnail)
+    await five_minute_del(message)
+    await delete_message(umsg)
 
 
 @new_task
@@ -517,7 +529,7 @@ async def edit_user_settings(client, query):
             thumb_layout = "None"
 
         buttons.data_button("Back", f"userset {user_id} back")
-        buttons.data_button("Close", f"userset {user_id} close")
+        buttons.data_button("Close", f"userset {user_id} close", position="footer")
         text = f"""<u>Leech Settings for {name}</u>
 Leech Type is <b>{ltype}</b>
 Custom Thumbnail <b>{thumbmsg}</b>
@@ -537,7 +549,7 @@ Thumbnail Layout is <b>{thumb_layout}</b>
         buttons.data_button("Rclone Config", f"userset {user_id} rcc")
         buttons.data_button("Default Rclone Path", f"userset {user_id} rcp")
         buttons.data_button("Back", f"userset {user_id} back")
-        buttons.data_button("Close", f"userset {user_id} close")
+        buttons.data_button("Close", f"userset {user_id} close", position="footer")
         rccmsg = "Exists" if await aiopath.exists(rclone_conf) else "Not Exists"
         if user_dict.get("rclone_path", False):
             rccpath = user_dict["rclone_path"]
@@ -548,7 +560,7 @@ Thumbnail Layout is <b>{thumb_layout}</b>
         text = f"""<u>Rclone Settings for {name}</u>
 Rclone Config <b>{rccmsg}</b>
 Rclone Path is <code>{rccpath}</code>"""
-        await edit_message(message, text, buttons.build_menu(1))
+        await edit_message(message, text, buttons.build_menu(2))
     elif data[2] == "gdrive":
         await query.answer()
         buttons = ButtonMaker()
@@ -570,7 +582,7 @@ Rclone Path is <code>{rccpath}</code>"""
             )
             sd_msg = "Disabled"
         buttons.data_button("Back", f"userset {user_id} back")
-        buttons.data_button("Close", f"userset {user_id} close")
+        buttons.data_button("Close", f"userset {user_id} close", position="footer")
         tokenmsg = "Exists" if await aiopath.exists(token_pickle) else "Not Exists"
         if user_dict.get("gdrive_id", False):
             gdrive_id = user_dict["gdrive_id"]
@@ -579,12 +591,12 @@ Rclone Path is <code>{rccpath}</code>"""
         else:
             gdrive_id = "None"
         index = user_dict["index_url"] if user_dict.get("index_url", False) else "None"
-        text = f"""<u>Gdrive Tools Settings for {name}</u>
+        text = f"""<u>Gdrive Settings for {name}</u>
 Gdrive Token <b>{tokenmsg}</b>
 Gdrive ID is <code>{gdrive_id}</code>
 Index URL is <code>{index}</code>
 Stop Duplicate is <b>{sd_msg}</b>"""
-        await edit_message(message, text, buttons.build_menu(1))
+        await edit_message(message, text, buttons.build_menu(2))
     elif data[2] == "vthumb":
         await query.answer()
         await send_file(message, thumb_path, name)
@@ -918,7 +930,7 @@ bot.add_handler(
     MessageHandler(
         user_settings,
         filters=command(BotCommands.UserSetCommand, case_sensitive=True)
-        & CustomFilters.authorized,
+        & CustomFilters.authorized_uset,
     )
 )
 bot.add_handler(CallbackQueryHandler(edit_user_settings, filters=regex("^userset")))

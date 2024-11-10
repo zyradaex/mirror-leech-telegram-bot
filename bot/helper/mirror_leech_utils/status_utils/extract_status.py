@@ -7,16 +7,32 @@ from ...ext_utils.status_utils import (
     MirrorStatus,
     get_readable_time,
 )
+from subprocess import run as prun
 
 
 class ExtractStatus:
-    def __init__(self, listener, gid):
+    def __init__(
+            self,
+            listener,
+            gid
+        ):
         self.listener = listener
         self._size = self.listener.size
         self._gid = gid
         self._start_time = time()
         self._proccessed_bytes = 0
-        self.engine = "P7zip"
+        self.engine = f"p7zip v{self._eng_ver()}"
+
+    def _eng_ver(self):
+        _engine = prun(
+            [
+                "7z",
+                "-version"
+            ],
+            capture_output=True,
+            text=True
+        )
+        return _engine.stdout.split("\n")[1].split(" ")[1]
 
     def gid(self):
         return self._gid
@@ -35,7 +51,7 @@ class ExtractStatus:
         return f"{round(await self.progress_raw(), 2)}%"
 
     def speed(self):
-        return f"{get_readable_file_size(self.speed_raw())}/s"
+        return f"{get_readable_file_size(self.speed_raw())}/s" # type: ignore
 
     def name(self):
         return self.listener.name

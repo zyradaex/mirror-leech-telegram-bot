@@ -1,3 +1,4 @@
+from bot import aria2
 from ...ext_utils.status_utils import (
     MirrorStatus,
     get_readable_file_size,
@@ -6,11 +7,19 @@ from ...ext_utils.status_utils import (
 
 
 class DirectStatus:
-    def __init__(self, listener, obj, gid):
+    def __init__(
+            self,
+            listener,
+            obj,
+            gid
+        ):
         self._gid = gid
         self._obj = obj
         self.listener = listener
-        self.engine = "Aria2C v1.37.0"
+        self.engine = f"Aria2 v{self._eng_ver()}"
+
+    def _eng_ver(self):
+        return aria2.client.get_version()["version"]
 
     def gid(self):
         return self._gid
@@ -41,7 +50,10 @@ class DirectStatus:
             return "-"
 
     def status(self):
-        if self._obj.download_task and self._obj.download_task.is_waiting:
+        if (
+            self._obj.download_task and
+            self._obj.download_task.is_waiting
+        ):
             return MirrorStatus.STATUS_QUEUEDL
         return MirrorStatus.STATUS_DOWNLOADING
 

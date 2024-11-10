@@ -84,8 +84,8 @@ async def get_buttons(key=None, edit_type=None):
         buttons.data_button("Aria2c Settings", "botset aria")
         buttons.data_button("Sabnzbd Settings", "botset nzb")
         buttons.data_button("JDownloader Sync", "botset syncjd")
-        buttons.data_button("Close", "botset close")
-        msg = "Bot Settings:"
+        buttons.data_button("Close", "botset close", position="footer")
+        msg = "<b>Bot Settings:</b>\n<blockquote>Do not change/fill in values or buttons related to NZB Usenet and JDownloader.</blockquote>"
     elif edit_type is not None:
         if edit_type == "botvar":
             msg = ""
@@ -95,6 +95,7 @@ async def get_buttons(key=None, edit_type=None):
             buttons.data_button("Close", "botset close")
             if key in [
                 "SUDO_USERS",
+                "SET_COMMANDS",
                 "CMD_SUFFIX",
                 "OWNER_ID",
                 "USER_SESSION_STRING",
@@ -238,7 +239,7 @@ Timeout: 60 sec"""
                 )
         msg = f"Server Keys | Page: {int(start / 10)} | State: {state}"
 
-    button = buttons.build_menu(1) if key is None else buttons.build_menu(2)
+    button = buttons.build_menu(2)
     return msg, button
 
 
@@ -974,6 +975,12 @@ async def load_config():
         JD_EMAIL = ""
         JD_PASS = ""
 
+    MEGA_EMAIL = environ.get("MEGA_EMAIL", "")
+    MEGA_PASSWORD = environ.get("MEGA_PASSWORD", "")
+    if len(MEGA_EMAIL) == 0 or len(MEGA_EMAIL) == 0:
+        MEGA_EMAIL = ""
+        MEGA_PASSWORD = ""
+
     USENET_SERVERS = environ.get("USENET_SERVERS", "")
     try:
         if len(USENET_SERVERS) == 0:
@@ -1157,13 +1164,22 @@ async def load_config():
     THUMBNAIL_LAYOUT = environ.get("THUMBNAIL_LAYOUT", "")
     THUMBNAIL_LAYOUT = "" if len(THUMBNAIL_LAYOUT) == 0 else THUMBNAIL_LAYOUT
 
+    DELETE_LINKS = environ.get('DELETE_LINKS', '')
+    DELETE_LINKS = DELETE_LINKS.lower() == 'true'
+
+    SAFE_MODE = environ.get("SAFE_MODE", "")
+    SAFE_MODE = int(SAFE_MODE) if len(SAFE_MODE) > 0 else 30
+
+    SET_COMMANDS = environ.get('SET_COMMANDS', '')
+    SET_COMMANDS = SET_COMMANDS.lower() == 'true'
+
     await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
     BASE_URL = environ.get("BASE_URL", "").rstrip("/")
     if len(BASE_URL) == 0:
         BASE_URL = ""
     else:
         await create_subprocess_shell(
-            f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent"
+            f"gunicorn web.wserver:app --bind 0.0.0.0:{PORT} --worker-class gevent"
         )
 
     UPSTREAM_REPO = environ.get("UPSTREAM_REPO", "")
@@ -1205,6 +1221,7 @@ async def load_config():
             "CMD_SUFFIX": CMD_SUFFIX,
             "DATABASE_URL": DATABASE_URL,
             "DEFAULT_UPLOAD": DEFAULT_UPLOAD,
+            "DELETE_LINKS": DELETE_LINKS,
             "DOWNLOAD_DIR": DOWNLOAD_DIR,
             "EQUAL_SPLITS": EQUAL_SPLITS,
             "EXTENSION_FILTER": EXTENSION_FILTER,
@@ -1215,6 +1232,8 @@ async def load_config():
             "IS_TEAM_DRIVE": IS_TEAM_DRIVE,
             "JD_EMAIL": JD_EMAIL,
             "JD_PASS": JD_PASS,
+            "MEGA_EMAIL": MEGA_EMAIL,
+            "MEGA_PASSWORD": MEGA_PASSWORD,
             "LEECH_DUMP_CHAT": LEECH_DUMP_CHAT,
             "LEECH_FILENAME_PREFIX": LEECH_FILENAME_PREFIX,
             "LEECH_SPLIT_SIZE": LEECH_SPLIT_SIZE,
@@ -1233,9 +1252,11 @@ async def load_config():
             "RCLONE_SERVE_PORT": RCLONE_SERVE_PORT,
             "RSS_CHAT": RSS_CHAT,
             "RSS_DELAY": RSS_DELAY,
+            "SAFE_MODE": SAFE_MODE,
             "SEARCH_API_LINK": SEARCH_API_LINK,
             "SEARCH_LIMIT": SEARCH_LIMIT,
             "SEARCH_PLUGINS": SEARCH_PLUGINS,
+            "SET_COMMANDS": SET_COMMANDS,
             "STATUS_LIMIT": STATUS_LIMIT,
             "STATUS_UPDATE_INTERVAL": STATUS_UPDATE_INTERVAL,
             "STOP_DUPLICATE": STOP_DUPLICATE,

@@ -1,14 +1,25 @@
 from bot import LOGGER
-from ...ext_utils.status_utils import get_readable_file_size, MirrorStatus, get_readable_time
+from ...ext_utils.status_utils import (
+    get_readable_file_size,
+    MirrorStatus
+)
 
 
 class QueueStatus:
-    def __init__(self, listener, gid, status):
+    def __init__(
+            self,
+            listener,
+            gid,
+            status
+        ):
         self.listener = listener
         self._size = self.listener.size
         self._gid = gid
         self._status = status
-        self.engine = "Q-Sched"
+        self.engine = f"Queue v{self._eng_ver()}"
+
+    def _eng_ver(self):
+        return "3.0"
 
     def gid(self):
         return self._gid
@@ -24,17 +35,8 @@ class QueueStatus:
             return MirrorStatus.STATUS_QUEUEDL
         return MirrorStatus.STATUS_QUEUEUP
 
-    def processed_bytes(self):
-        return 0
-
-    def progress(self):
-        return "0%"
-
     def speed(self):
         return "0B/s"
-
-    def eta(self):
-        return "-"
 
     def task(self):
         return self

@@ -128,18 +128,30 @@ class TaskConfig:
         self.is_super_chat = self.message.chat.type.name in ["SUPERGROUP", "CHANNEL"]
 
     async def set_mode(self):
-        if self.is_leech:
+        mode = "Gdrive"  # Default
+    
+        if self.is_qbit:
+            mode = "Qbit"
+        elif self.is_ytdlp:
+            mode = "Ytdlp"
+        elif self.is_leech:
             mode = "Leech"
         elif self.up_dest in {"rc", "rcl", "rcu"} or is_rclone_path(str(self.up_dest)):
             mode = "Rclone"
-        else:
-            mode = "Mirror"
+        elif self.is_clone:
+            mode = "Clone"
     
+        if mode in {"Qbit", "Ytdlp"}:
+            if self.is_leech:
+                mode += " Leech"
+            else:
+                mode += " Gdrive"
+        
         if self.compress:
-            mode += " as Zip"
+            mode += " (Zip)"
         elif self.extract:
-            mode += " as Unzip"
-    
+            mode += " (Unzip)"
+        
         self.mode = mode
 
     def get_token_path(self, dest):

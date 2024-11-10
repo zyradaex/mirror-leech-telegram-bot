@@ -1,17 +1,29 @@
+from mega import MegaApi
+
 from ...ext_utils.status_utils import (
-    get_readable_file_size,
     MirrorStatus,
-    get_readable_time,
+    get_readable_file_size,
+    get_readable_time
 )
 
 
 class MegaDownloadStatus:
-    def __init__(self, listener, obj, size, gid):
-        self._obj = obj
-        self._size = size
-        self._gid = gid
+    def __init__(
+            self,
+            listener,
+            obj,
+            gid,
+            status
+        ):
         self.listener = listener
-        self.engine = "MegaSDK v4.8.0"
+        self._obj = obj
+        self._size = self.listener.size
+        self._gid = gid
+        self._status = status
+        self.engine = f"Mega SDK v{self._eng_ver()}"
+
+    def _eng_ver(self):
+        return MegaApi("xyr").getVersion()
 
     def name(self):
         return self.listener.name
@@ -33,7 +45,8 @@ class MegaDownloadStatus:
 
     def eta(self):
         try:
-            seconds = (self._size - self._obj.downloaded_bytes) / self._obj.speed
+            seconds = (self._size - self._obj.downloaded_bytes) / \
+                self._obj.speed
             return get_readable_time(seconds)
         except ZeroDivisionError:
             return "-"

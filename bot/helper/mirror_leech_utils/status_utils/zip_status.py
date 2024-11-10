@@ -1,22 +1,41 @@
 from time import time
 
-from bot import LOGGER, subprocess_lock
+from bot import (
+    LOGGER,
+    subprocess_lock
+)
 from ...ext_utils.files_utils import get_path_size
 from ...ext_utils.status_utils import (
     get_readable_file_size,
     MirrorStatus,
     get_readable_time,
 )
+from subprocess import run as zrun
 
 
 class ZipStatus:
-    def __init__(self, listener, gid):
+    def __init__(
+            self,
+            listener,
+            gid
+        ):
         self.listener = listener
         self._size = self.listener.size
         self._gid = gid
         self._start_time = time()
         self._proccessed_bytes = 0
-        self.engine = "PyZIP"
+        self.engine = f"p7zip v{self._eng_ver()}"
+
+    def _eng_ver(self):
+        _engine = zrun(
+            [
+                "7z",
+                "-version"
+            ],
+            capture_output=True,
+            text=True
+        )
+        return _engine.stdout.split("\n")[1].split(" ")[1]
 
     def gid(self):
         return self._gid
@@ -35,7 +54,7 @@ class ZipStatus:
         return f"{round(await self.progress_raw(), 2)}%"
 
     def speed(self):
-        return f"{get_readable_file_size(self.speed_raw())}/s"
+        return f"{get_readable_file_size(self.speed_raw())}/s" # type: ignore
 
     def name(self):
         return self.listener.name

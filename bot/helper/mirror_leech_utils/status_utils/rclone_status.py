@@ -1,13 +1,31 @@
-from ...ext_utils.status_utils import MirrorStatus, get_readable_time
+from ...ext_utils.status_utils import MirrorStatus
+from subprocess import run as rrun
 
 
 class RcloneStatus:
-    def __init__(self, listener, obj, gid, status):
+    def __init__(
+            self,
+            listener,
+            obj,
+            gid,
+            status
+        ):
         self._obj = obj
         self._gid = gid
         self._status = status
         self.listener = listener
-        self.engine = "Rclone v1.68.1"
+        self.engine = f"Rclone {self._eng_ver()}"
+
+    def _eng_ver(self):
+        _engine = rrun(
+            [
+                "zcl",
+                "version"
+            ],
+            capture_output=True,
+            text=True
+        )
+        return _engine.stdout.split("\n")[0].split(" ")[1]
 
     def gid(self):
         return self._gid

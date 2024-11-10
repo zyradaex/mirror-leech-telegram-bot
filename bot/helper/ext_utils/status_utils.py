@@ -62,6 +62,7 @@ async def get_task_by_gid(gid: str):
         return None
 
 
+
 def get_specific_tasks(status, user_id):
     if status == "All":
         if user_id:
@@ -171,7 +172,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         tstatus = await sync_to_async(task.status) if status == "All" else status
         elapse = time() - task.listener.time
         elapsed = "-" if elapse < 1 else get_readable_time(elapse)
-        cancel_task = f"<b>/{BotCommands.CancelTaskCommand}_{task.gid()}</b>"
+        cancel_task = f"<b>/{BotCommands.CancelTaskCommand}_{task.gid()</b>"
         user_tag = task.listener.message.from_user.mention(style='html')
         safe_mode = int(config_dict["SAFE_MODE"])
         if safe_mode > 0:
@@ -182,7 +183,6 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         else:
             msg += f"<b>{escape(f'{task.name()}')}</b>"
         if tstatus not in [
-            MirrorStatus.STATUS_SPLITTING,
             MirrorStatus.STATUS_SEEDING,
             MirrorStatus.STATUS_SAMVID,
             MirrorStatus.STATUS_CONVERTING,
@@ -202,7 +202,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
                 f"\n<code>Past   :</code> {elapsed}"
                 f"\n<code>User   :</code> <code>{user_tag}</code>"
                 f"\n<code>UserID :</code> {task.listener.user_id}"
-                f"\n<code>Upload :</code> {task.listener.mode}"
+                f"\n<code>Detail :</code> {task.listener.mode}"
             )
             if hasattr(task, "seeders_num"):
                 try:
@@ -223,7 +223,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             msg += (
                 f"\n<blockquote><code>Status :</code> <b>{tstatus}</b>"
                 f"\n<code>Size   :</code> {task.size()}"
-                f"\n<code>Upload :</code> {task.listener.mode}"
+                f"\n<code>Detail :</code> {task.listener.mode}"
                 f"\n<code>Past   :</code> {elapsed}"
                 f"\n<code>User   :</code> <code>{user_tag}</code>"
                 f"\n<code>UserID :</code> {task.listener.user_id}"

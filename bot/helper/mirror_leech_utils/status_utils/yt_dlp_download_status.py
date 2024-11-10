@@ -4,6 +4,7 @@ from ...ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time,
 )
+from pkg_resources import get_distribution
 
 
 class YtDlpStatus:
@@ -12,7 +13,10 @@ class YtDlpStatus:
         self._gid = gid
         self.listener = listener
         self._proccessed_bytes = 0
-        self.engine = "Ytdlp"
+        self.engine = f"Yt-Dlp v{self._eng_ver()}"
+
+    def _eng_ver(self):
+        return get_distribution("yt-dlp").version
 
     def gid(self):
         return self._gid

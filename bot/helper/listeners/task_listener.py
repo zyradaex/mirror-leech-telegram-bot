@@ -378,15 +378,7 @@ class TaskListener(TaskConfig):
         msg += f"\n\n<blockquote><code>Reason </code>: {escape(str(error))}"
         msg += f"\n<code>Past   </code>: {get_readable_time(time() - self.time)}"
         msg += f"\n<code>Mode   </code>: {self.mode}</blockquote>"
-        tlmsg = await send_message(
-            self.message, # type: ignore
-            msg,
-            button
-        )
-        await auto_delete_message(
-            self.message, # type: ignore
-            tlmsg
-        )
+        await send_message(self.message, msg, button)
         if count == 0:
             await self.clean()
         else:
@@ -428,14 +420,7 @@ class TaskListener(TaskConfig):
         msg += f"\n\n<blockquote><code>Reason </code>: {escape(str(error))}"
         msg += f"\n<code>Past   </code>: {get_readable_time(time() - self.time)}"
         msg += f"\n<code>Mode   </code>: {self.mode}</blockquote>"
-        tlmsg = await send_message(
-            self.message, # type: ignore
-            msg
-        )
-        await auto_delete_message(
-            self.message, # type: ignore
-            tlmsg
-        )
+        await send_message(self.message, msg)
         if count == 0:
             await self.clean()
         else:

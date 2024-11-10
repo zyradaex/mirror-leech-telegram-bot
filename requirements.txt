@@ -27,7 +27,6 @@ qbittorrent-api
 requests
 telegraph
 tenacity
-tgcrypto
 urllib3
 uvloop
 xattr

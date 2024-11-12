@@ -1,5 +1,5 @@
 from asyncio import sleep
-from pyrogram.errors import FloodWait, FloodPremiumWait
+from pyrogram.errors import FloodWait, FloodPremiumWait, ReplyMarkupInvalid, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty, MessageNotModified, MessageEmpty
 from re import match as re_match
 from time import time
 from pyrogram.types import InputMediaPhoto

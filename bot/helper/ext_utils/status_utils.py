@@ -172,7 +172,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         tstatus = await sync_to_async(task.status) if status == "All" else status
         elapse = time() - task.listener.time
         elapsed = "-" if elapse < 1 else get_readable_time(elapse)
-        cancel_task = f"<b>/{BotCommands.CancelTaskCommand}_{task.gid()</b>"
+        cancel_task = f"<b>/{BotCommands.CancelTaskCommand}_{task.gid()}</b>"
         user_tag = task.listener.message.from_user.mention(style='html')
         safe_mode = int(config_dict["SAFE_MODE"])
         if safe_mode > 0:

@@ -88,11 +88,10 @@ class TelegramUploader:
 
     async def _msg_to_reply(self):
         if self._listener.up_dest:
-            msg = (
-                self._listener.message.link
-                if self._listener.is_super_chat
-                else self._listener.message.text.lstrip("/")
-            )
+            msg = f"<b>Uploading Files</b>"
+            msg += f"\n<blockquote><b>User: </b>{self._listener.message.from_user.mention(style='HTML')}"
+            msg += f"\n<b>UserID: </b> <code>{self._listener.message.from_user.id}</code>"
+            msg += f"\n<b><a href='{self._listener.message.link if self._listener.is_super_chat else self._listener.message.text.lstrip('/')}'>Leech Source Link</a></b></blockquote>"
             try:
                 if self._user_session:
                     self._sent_msg = await user.send_message(

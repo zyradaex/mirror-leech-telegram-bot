@@ -1126,7 +1126,7 @@ class TaskConfig:
         checked = False
         for ffmpeg_cmd in self.ffmpeg_cmds:
             cmd = [
-                "ffmpeg",
+                "xyconvert",
                 "-hide_banner",
                 "-loglevel",
                 "error",
